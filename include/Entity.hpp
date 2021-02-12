@@ -13,6 +13,7 @@ public:
 	void set_y(int y_);
 	void set_currentFrame(int width, int height);
 	void moving(float to_x, float to_y);
+	
 private:
 	Vector2f pos;
 	SDL_Rect currentFrame;

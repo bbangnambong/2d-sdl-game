@@ -39,3 +39,4 @@ void Entity::moving(float to_x, float to_y){
 	pos.x += to_x;
 	pos.y += to_y;
 }
+

@@ -12,6 +12,7 @@ public:
 	float getvy();
 	bool isgrounded();
 	void landed();
+	int iscollided(Entity a, float to_x, float to_y);
 private:
 	float vel_x;
 	float vel_y;

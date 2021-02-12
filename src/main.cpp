@@ -13,6 +13,7 @@
 #define SCREEN_HEIGHT 720
 #define GRAVITY 1
 
+
 int main(int argc, char* args[]){
 	if (SDL_Init(SDL_INIT_VIDEO) > 0){
 		std::cout << "SDL_Init has failed. SDL_ERROR: " << SDL_GetError() << std::endl;
@@ -25,15 +26,19 @@ int main(int argc, char* args[]){
 	SDL_Texture* Backgroundtex = window.loadTexture("res/gfx/s_back.png");
 	SDL_Texture* grassTexture = window.loadTexture("res/gfx/s_brick.png");
 	SDL_Texture* theman = window.loadTexture("res/gfx/s_man.png");
+	SDL_Texture* weapontex = window.loadTexture("res/gfx/s_weapon_L.png");
 
 	Entity background = Entity(Vector2f(0, 0), Backgroundtex);
 	background.set_currentFrame(SCREEN_WIDTH, SCREEN_HEIGHT);
-	//std::vector<Entity> entities = {Entity(Vector2f(0, 0), grassTexture), Entity(Vector2f(32, 0), grassTexture), Entity(Vector2f(32, 32), grassTexture), Entity(Vector2f(32, 64), grassTexture)};
-	std::vector<Entity> entities;
+
+
+	std::vector<Entity> grounds = {Entity(Vector2f(700, SCREEN_HEIGHT-300), grassTexture), Entity(Vector2f(100, SCREEN_HEIGHT-128), grassTexture), Entity(Vector2f(300, SCREEN_HEIGHT-200), grassTexture), Entity(Vector2f(500, SCREEN_HEIGHT-250), grassTexture)};;
 	for(int i = 0; i < SCREEN_WIDTH/64 ; i++){
-		entities.push_back(Entity(Vector2f(i*64, SCREEN_HEIGHT-64), grassTexture));
+		grounds.push_back(Entity(Vector2f(i*64, SCREEN_HEIGHT-64), grassTexture));
 	}
 	std::vector<Player> players = {Player(Vector2f(0, 0), theman)};
+	Entity weapon = Entity(Vector2f(0,0), weapontex);
+
 
 	bool gameRunning = true;
 	SDL_Event event;
@@ -46,6 +51,7 @@ int main(int argc, char* args[]){
 	float currentTime = utils::hireTimeInSeconds();
 
 	while (gameRunning){
+		bool isweapon = false;
 		int startTicks = SDL_GetTicks();
 
 		float newTime = utils::hireTimeInSeconds();
@@ -56,18 +62,18 @@ int main(int argc, char* args[]){
 
 		while (accumulator >= timeStep){
 			if (state[SDL_SCANCODE_SPACE]){
-				std::cout << "SPACE" << std::endl;
 				if(players[0].isgrounded()){
 					to_y = -players[0].getvy();
 					players[0].jump();
 				}
 			}
+			/*if (state[SDL_SCANCODE_KP_A]){
+				isweapon = true;
+			}*/
 			if (state[SDL_SCANCODE_RIGHT] && !state[SDL_SCANCODE_LEFT]){
-				std::cout << "RIGHT" << std::endl;
 				to_x += players[0].getvx();
 			}
 			if (state[SDL_SCANCODE_LEFT] && !state[SDL_SCANCODE_RIGHT]){
-				std::cout << "LEFT" << std::endl;
 				to_x -= players[0].getvx();
 			}
 
@@ -76,44 +82,67 @@ int main(int argc, char* args[]){
 					case SDL_QUIT:
 						gameRunning = false;
 						break;
-					/*case SDL_KEYDOWN:
-						
-					case SDL_KEYUP:
-						break;*/
+					case SDL_KEYDOWN:
+						switch(event.key.keysym.sym ){
+							case SDLK_a:
+								isweapon = true;							
+						}
 					default:
 						break;
 				}
 			}
+			//limiting character velocity
+			if(to_x > players[0].getvx()) to_x = players[0].getvx();
+			if(to_x < -players[0].getvx()) to_x = -players[0].getvx();
+
+
+
 			accumulator -= timeStep;
 		}
 		float alpha = accumulator / timeStep;
 
-		//limiting character velocity
-		if(to_x > players[0].getvx()) to_x = players[0].getvx();
-		if(to_x < -players[0].getvx()) to_x = -players[0].getvx();
-
-		players[0].moving(to_x, to_y);
-
-		if(players[0].getpos().y + players[0].getcurrentFrame().h > SCREEN_HEIGHT - entities[0].getcurrentFrame().h){
-			players[0].set_y(SCREEN_HEIGHT - entities[0].getcurrentFrame().h - players[0].getcurrentFrame().h);
-			players[0].landed();
-			to_y = 0;
-		}
-
-		to_x *=0.9;
-
-		if(!players[0].isgrounded()) to_y += GRAVITY;
 		
+		if(!players[0].isgrounded()) to_y += GRAVITY;
+
+		players[0].moving(0, to_y);
+		//collision
+		bool jumpu = true;
+		for(unsigned int i = 0; i < grounds.size(); i++){
+			int collision = players[0].iscollided(grounds[i], to_x, to_y);
+			std::cout << collision << std::endl;
+			
+			if(collision == 1)
+				to_y = 0;
+			if(collision == 2){
+				players[0].set_y(grounds[i].getpos().y - players[0].getcurrentFrame().h);
+				players[0].landed();
+				to_y = 0;
+				jumpu = false;
+			}
+			if(collision == 3 || collision == 4)
+				to_x = 0;
+		}
+		if(jumpu){
+			players[0].jump();
+		}
+		players[0].moving(to_x, 0);
+		
+		to_x *=0.9;
 
 
 		window.clear();
 
 		window.render(background);
-		for(unsigned int i = 0; i < entities.size(); i++){
-			window.render(entities[i]);
+		for(unsigned int i = 0; i < grounds.size(); i++){
+			window.render(grounds[i]);
 		}
 		for(unsigned int i = 0; i < players.size(); i++){
 			window.render(players[i]);
+		}
+		if(isweapon){
+			weapon.set_x(players[0].getpos().x - weapon.getcurrentFrame().w);
+			weapon.set_y(players[0].getpos().y);
+			window.render(weapon);
 		}
 
 		window.display();
