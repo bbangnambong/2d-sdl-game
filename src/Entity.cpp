@@ -40,3 +40,6 @@ void Entity::moving(float to_x, float to_y){
 	pos.y += to_y;
 }
 
+void Entity::changetex(SDL_Texture* tex_){
+	tex = tex_;
+}
