@@ -9,8 +9,8 @@
 
 Player::Player(Vector2f p_pos, SDL_Texture* p_tex) : Entity(p_pos, p_tex) {
 	grounded = false;
-	vel_x = 5;
-	vel_y = 17;
+	vel_x = 7;
+	vel_y = 16;
 	set_currentFrame(50, 50);
 	set_x(SCREEN_WIDTH/2 - getcurrentFrame().w/2);
 	set_y(0);

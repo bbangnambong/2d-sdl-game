@@ -15,6 +15,8 @@
 #define GRAVITY 0.6
 #define WALKING_MOTION_SPEED 10
 #define JUMP_MOTION_SPEED 10
+#define WEAPON_DELAY 700
+#define WEAPON_LAST 70
 
 
 int main(int argc, char* args[]){
@@ -25,33 +27,30 @@ int main(int argc, char* args[]){
 		std::cout << "IMG_INIT has failed. ERROR: " << SDL_GetError() << std::endl;
 	}
 
+
 	RenderWindow window("GAME v1.0", 1280, 720);
 
 	SDL_Texture* Backgroundtex = window.loadTexture("res/gfx/s_back.png");
 	SDL_Texture* grassTexture = window.loadTexture("res/gfx/s_brick.png");
-	SDL_Texture* weapontex = window.loadTexture("res/gfx/s_weapon_L.png");
+	SDL_Texture* weapontex[2] = {window.loadTexture("res/gfx/s_weapon_l.png"), window.loadTexture("res/gfx/s_weapon_r.png")};
 	SDL_Texture* c_walk_l[7] = {window.loadTexture("res/gfx/c_walk/c_walk_l_1.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_2.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_3.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_4.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_5.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_6.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_7.png")};
 	SDL_Texture* c_walk_r[7] = {window.loadTexture("res/gfx/c_walk/c_walk_r_1.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_2.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_3.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_4.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_5.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_6.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_7.png")};
 	SDL_Texture* c_jump_r[3] = {window.loadTexture("res/gfx/c_jump/c_jump_r_1.png"), window.loadTexture("res/gfx/c_jump/c_jump_r_2.png"), window.loadTexture("res/gfx/c_jump/c_jump_r_3.png")};
 	SDL_Texture* c_jump_l[3] = {window.loadTexture("res/gfx/c_jump/c_jump_l_1.png"), window.loadTexture("res/gfx/c_jump/c_jump_l_2.png"), window.loadTexture("res/gfx/c_jump/c_jump_l_3.png")};
 	SDL_Texture* enemytex = {window.loadTexture("res/gfx/s_enemy.png")};
 
+	
 
 	Entity background = Entity(Vector2f(0, 0), Backgroundtex);
 	background.set_currentFrame(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	
-
-
-
 	std::vector<Entity> grounds = {Entity(Vector2f(700, SCREEN_HEIGHT-300), grassTexture), Entity(Vector2f(100, SCREEN_HEIGHT-128), grassTexture), Entity(Vector2f(300, SCREEN_HEIGHT-200), grassTexture), Entity(Vector2f(500, SCREEN_HEIGHT-250), grassTexture)};;
 	for(int i = 0; i < SCREEN_WIDTH/64 ; i++){
 		grounds.push_back(Entity(Vector2f(i*64, SCREEN_HEIGHT-64), grassTexture));
 	}
 	std::vector<Player> players = {Player(Vector2f(0, 0), c_walk_r[0])};
-	Entity weapon = Entity(Vector2f(0,0), weapontex);
+	Player weapon = Player(Vector2f(0,0), weapontex[1]);
+	weapon.set_currentFrame(70,30);
 	std::vector<Enemy> enemies;
-
 
 
 	bool gameRunning = true;
@@ -67,13 +66,13 @@ int main(int argc, char* args[]){
 
 	int walknum = 1;
 	bool isleft = false;
-
+	int weapon_time = 0;
+	int weapon_delay = 0;
+	bool isweapon = false;
 
 	while (gameRunning){
 		
-		bool isweapon = false;
 		int startTicks = SDL_GetTicks();
-		std::cout << startTicks << std::endl;
 
 		float newTime = utils::hireTimeInSeconds();
 		float frameTime = newTime - currentTime;
@@ -89,9 +88,6 @@ int main(int argc, char* args[]){
 					players[0].jump();
 				}
 			}
-			/*if (state[SDL_SCANCODE_KP_A]){
-				isweapon = true;
-			}*/
 			if (state[SDL_SCANCODE_RIGHT] && !state[SDL_SCANCODE_LEFT]){
 				walknum++;
 				if(walknum >= WALKING_MOTION_SPEED*7) walknum = WALKING_MOTION_SPEED;
@@ -115,7 +111,12 @@ int main(int argc, char* args[]){
 					case SDL_KEYDOWN:
 						switch(event.key.keysym.sym ){
 							case SDLK_a:
-								isweapon = true;							
+								if(startTicks - weapon_delay > WEAPON_DELAY){
+								isweapon = true;
+								weapon_time = startTicks;
+								weapon_delay = startTicks;
+								}
+								break;					
 						}
 						break;
 					default:
@@ -168,12 +169,32 @@ int main(int argc, char* args[]){
 		
 		to_x *=0.9;
 
-	for(unsigned int i = 0; i < enemies.size(); i++){
-		int collision = players[0].iscollided(enemies[i], to_x, to_y);
-		if(collision != 0) gameRunning = false;
-	}
+		if(startTicks - weapon_time > WEAPON_LAST){
+			isweapon = false;
+		}
+		if(isweapon){
+			if(isleft){
+				weapon.changetex(weapontex[0]);
+				weapon.set_x(players[0].getpos().x - weapon.getcurrentFrame().w);
+				weapon.set_y(players[0].getpos().y + (players[0].getcurrentFrame().h - weapon.getcurrentFrame().h)/2);
+			}
+			else{
+				weapon.changetex(weapontex[1]);
+				weapon.set_x(players[0].getpos().x + players[0].getcurrentFrame().w);
+				weapon.set_y(players[0].getpos().y + (players[0].getcurrentFrame().h - weapon.getcurrentFrame().h)/2);
+			}
+			for(unsigned int i = 0; i < enemies.size(); i++){
+				int collision = weapon.iscollided(enemies[i], to_x, to_y);
+				if(collision != 0){
+					enemies.erase(enemies.begin()+i);
+				}
+			}
+		}
 
-
+		for(unsigned int i = 0; i < enemies.size(); i++){
+			int collision = players[0].iscollided(enemies[i], to_x, to_y);
+			if(collision != 0) gameRunning = false;
+		}
 
 		if(startTicks/3000 - enemies.size() > 0){
 			enemies.push_back(Enemy(Vector2f(rand()%1280,0), enemytex));
@@ -212,8 +233,6 @@ int main(int argc, char* args[]){
 			window.render(enemies[i]);
 		}
 		if(isweapon){
-			weapon.set_x(players[0].getpos().x - weapon.getcurrentFrame().w);
-			weapon.set_y(players[0].getpos().y);
 			window.render(weapon);
 		}
 
@@ -226,7 +245,7 @@ int main(int argc, char* args[]){
 		}
 	}
 
-	window.cleanUp();
+	window.cleanUp(); 
 	SDL_Quit();
 
 	return 0;

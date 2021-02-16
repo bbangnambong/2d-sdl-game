@@ -54,6 +54,27 @@ void RenderWindow::render(Entity& p_entity){
 	SDL_RenderCopy(renderer, p_entity.gettex(), &src, &dst);
 }
 
+void RenderWindow::render(float p_x, float p_y, const char* p_text, TTF_Font* font, SDL_Color textColor)
+{
+		SDL_Surface* surfaceMessage = TTF_RenderText_Blended( font, p_text, textColor);
+		SDL_Texture* message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+
+		SDL_Rect src;
+		src.x = 0;
+		src.y = 0;
+		src.w = surfaceMessage->w;
+		src.h = surfaceMessage->h; 
+
+		SDL_Rect dst;
+		dst.x = p_x;
+		dst.y = p_y;
+		dst.w = src.w;
+		dst.h = src.h;
+
+		SDL_RenderCopy(renderer, message, &src, &dst);
+		SDL_FreeSurface(surfaceMessage);
+}
+
 void RenderWindow::display(){
 	SDL_RenderPresent(renderer);
 }
