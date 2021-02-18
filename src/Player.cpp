@@ -12,8 +12,6 @@ Player::Player(Vector2f p_pos, SDL_Texture* p_tex) : Entity(p_pos, p_tex) {
 	vel_x = 7;
 	vel_y = 16;
 	set_currentFrame(50, 50);
-	set_x(SCREEN_WIDTH/2 - getcurrentFrame().w/2);
-	set_y(0);
 }
 
 void Player::jump(){
@@ -52,7 +50,7 @@ int Player::iscollided(Entity a, float to_x, float to_y){
 	if((man_top < ob_top && man_bot > ob_top && man_bot < ob_top+20) && (man_right > ob_left && man_left < ob_right) && to_y>0) return 2;
 	if((man_top < ob_bot && man_bot > ob_top) && (man_right > ob_left && man_right < ob_right))	return 3;//hitting left
 	if((man_top < ob_bot && man_bot > ob_top) && (man_left > ob_left && man_left < ob_right)) return 4;//hitting right
-	
+	if((man_top < ob_bot && man_bot > ob_top) && (man_right > ob_left && man_left < ob_right)) return 5;// for weapon
 	
 	return 0;
 }

@@ -3,7 +3,7 @@
 #include <SDL2/SDL_image.h>
 #include <math.hpp>
 
-Entity::Entity(Vector2f p_pos, SDL_Texture* p_tex) : pos(p_pos), tex(p_tex){
+Entity::Entity(Vector2f p_pos, SDL_Texture* p_tex) : pos(p_pos), tex(p_tex) {
 	currentFrame.x = 0;
 	currentFrame.y = 0;
 	currentFrame.w = 64;

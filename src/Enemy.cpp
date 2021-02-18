@@ -6,7 +6,7 @@
 #include "Entity.hpp"
 
 Enemy::Enemy(Vector2f p_pos, SDL_Texture* p_tex) : Entity(p_pos, p_tex){
-	vel= 2;
+	vel= 6;
 	set_currentFrame(30,30);
 }
 
