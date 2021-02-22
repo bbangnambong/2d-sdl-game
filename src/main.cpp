@@ -15,11 +15,11 @@
 #define GRAVITY 0.6
 #define WALKING_MOTION_SPEED 10
 #define JUMP_MOTION_SPEED 10
-#define WEAPON_DELAY 700
+#define WEAPON_DELAY 500
 #define WEAPON_LAST 80
 #define GROUND_LIMIT 500
 #define ENEMY_SPEED 3
-#define ENEMY_HP 3
+#define ENEMY_HP 20
 #define ENEMY_HIT_DELAY 2000
 
 int main(int argc, char* args[]){
@@ -35,7 +35,7 @@ int main(int argc, char* args[]){
 	//Loading textures
 	SDL_Texture* Backgroundtex = window.loadTexture("res/gfx/s_back.png");
 	SDL_Texture* grassTexture = window.loadTexture("res/gfx/s_brick.png");
-	SDL_Texture* weapontex[2] = {window.loadTexture("res/gfx/s_weapon_l.png"), window.loadTexture("res/gfx/s_weapon_r.png")};
+	SDL_Texture* weapontex_all[3] = {window.loadTexture("res/gfx/s_weapon_l.png"), window.loadTexture("res/gfx/s_weapon_r.png"), window.loadTexture("res/gfx/s_weapon_laser.png")};
 	SDL_Texture* c_walk_l[7] = {window.loadTexture("res/gfx/c_walk/c_walk_l_1.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_2.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_3.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_4.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_5.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_6.png"), window.loadTexture("res/gfx/c_walk/c_walk_l_7.png")};
 	SDL_Texture* c_walk_r[7] = {window.loadTexture("res/gfx/c_walk/c_walk_r_1.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_2.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_3.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_4.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_5.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_6.png"), window.loadTexture("res/gfx/c_walk/c_walk_r_7.png")};
 	SDL_Texture* c_jump_r[3] = {window.loadTexture("res/gfx/c_jump/c_jump_r_1.png"), window.loadTexture("res/gfx/c_jump/c_jump_r_2.png"), window.loadTexture("res/gfx/c_jump/c_jump_r_3.png")};
@@ -45,6 +45,11 @@ int main(int argc, char* args[]){
 	SDL_Texture* e_jump_r[3] = {window.loadTexture("res/gfx/c_jump/c_jump_r_1.png"), window.loadTexture("res/gfx/c_jump/c_jump_r_2.png"), window.loadTexture("res/gfx/c_jump/c_jump_r_3.png")};
 	SDL_Texture* e_jump_l[3] = {window.loadTexture("res/gfx/c_jump/c_jump_l_1.png"), window.loadTexture("res/gfx/c_jump/c_jump_l_2.png"), window.loadTexture("res/gfx/c_jump/c_jump_l_3.png")};
 	SDL_Texture* enemytex = {window.loadTexture("res/gfx/s_enemy.png")};
+	std::vector<SDL_Texture*> weapontex;
+	//SDL_Texture* bullettex = {window.loadTexture("res/gfx/s_enemy.png")};
+	bool gameRunning = true;
+	SDL_Event event;
+	const Uint8 *state = SDL_GetKeyboardState(NULL);
 
 	//creating entities
 	Entity background = Entity(Vector2f(0, 0), Backgroundtex);
@@ -54,15 +59,12 @@ int main(int argc, char* args[]){
 		grounds.push_back(Entity(Vector2f(i*32, SCREEN_HEIGHT-64), grassTexture));
 	}
 	std::vector<Player> players = {Player(Vector2f(SCREEN_WIDTH/2, 0), c_walk_r[0])};
-	Player weapon = Player(Vector2f(0,0), weapontex[1]);
+	Player weapon = Player(Vector2f(0,0), weapontex_all[1]);
 	weapon.set_currentFrame(70,40);
+	weapontex.push_back(weapontex_all[0]);
+	weapontex.push_back(weapontex_all[1]);
 	Player enemy1 = Player(Vector2f(0,0), e_walk_r[0]);
 	std::vector<Enemy> enemies;
-
-
-	bool gameRunning = true;
-	SDL_Event event;
-	const Uint8 *state = SDL_GetKeyboardState(NULL);
 
 	float to_x = 0, to_y = 0, e_to_y = 0;
 	double e_to_x = 0;
@@ -76,6 +78,7 @@ int main(int argc, char* args[]){
 	int e_walknum = 1;
 	bool isleft = false;
 	bool e_isleft = false;
+	int weapon_type = 0;//0sword, 1laser, 2bullet
 	int weapon_time = 0;
 	int weapon_delay = 0;
 	bool isweapon = false;
@@ -84,6 +87,7 @@ int main(int argc, char* args[]){
 	int jumpTime = 0;
 	int enemy1_damaged = 0;
 	int enemy1_hit_delay = 0;
+	bool chasing = true;
 
 	while (gameRunning){
 		
@@ -132,7 +136,27 @@ int main(int argc, char* args[]){
 								weapon_time = startTicks;
 								weapon_delay = startTicks;
 								}
-								break;					
+								break;
+ 							case SDLK_s:
+								chasing = !chasing;
+								break;
+							case SDLK_d:
+								weapon_type++;
+								if(weapon_type >= 2) weapon_type = 0;
+								//Weapon type
+								if(weapon_type ==0){
+									weapon.set_currentFrame(70, 40);
+									weapontex.clear();
+									weapontex.push_back(weapontex_all[0]);
+									weapontex.push_back(weapontex_all[1]);
+								}
+								else if(weapon_type ==1){
+									weapon.set_currentFrame(2000, 20);
+									weapontex.clear();
+									weapontex.push_back(weapontex_all[2]);
+									weapontex.push_back(weapontex_all[2]);
+								}
+								break;
 						}
 						break;
 					default:
@@ -146,7 +170,7 @@ int main(int argc, char* args[]){
 
 			accumulator -= timeStep;
 		}
-		float alpha = accumulator / timeStep;
+		//float alpha = accumulator / timeStep;
 		 
 		if(enemy1.getpos().x < players[0].getpos().x){
 			e_to_x = ENEMY_SPEED;
@@ -243,18 +267,30 @@ int main(int argc, char* args[]){
 					grounds.push_back(Entity(Vector2f(-320, pos.y), grassTexture));
 				}
 			}
-			for(unsigned int i = 0; i < enemies.size(); i++){
-				enemies[i].moving(-to_x,0);
-				Vector2f pos = enemies[i].getpos();
-				if(to_x>0 && pos.x < -320){
-					enemies.erase(enemies.begin()+i);
-					enemies.push_back(Enemy(Vector2f(1600, pos.y), enemytex));
-				}
-				if(to_x<0 && pos.x > 1600){
-					enemies.erase(enemies.begin()+i);
-					enemies.push_back(Enemy(Vector2f(-320, pos.y), enemytex));
+			if(chasing){
+				for(unsigned int i = 0; i < enemies.size(); i++){
+					enemies[i].moving(-to_x,0);
+					Vector2f pos = enemies[i].getpos();
+					if(to_x>0 && pos.x < -320){
+						enemies.erase(enemies.begin()+i);
+						enemies.push_back(Enemy(Vector2f(1600, pos.y), enemytex));
+					}
+					if(to_x<0 && pos.x > 1600){
+						enemies.erase(enemies.begin()+i);
+						enemies.push_back(Enemy(Vector2f(-320, pos.y), enemytex));
+					}
 				}
 			}
+			else{
+				for(unsigned int i = 0; i < enemies.size(); i++){
+					enemies[i].moving(-to_x,0);
+					Vector2f pos = enemies[i].getpos();
+					if((to_x>0 && pos.x < -320) || (to_x<0 && pos.x > 1600)){
+						enemies.erase(enemies.begin()+i);
+					}
+				}
+			}
+
 			enemy1.moving(-to_x,0);
 			Vector2f pos = enemy1.getpos();
 			if(to_x>0 && pos.x < -320){
@@ -267,7 +303,12 @@ int main(int argc, char* args[]){
 		else{
 			players[0].moving(to_x, 0);
 		}
-
+		
+		if(!chasing)
+			for(unsigned int i = 0; i < enemies.size(); i++){
+				Vector2f pos = enemies[i].getpos();
+				if(pos.y > 730 && pos.y < 20) enemies.erase(enemies.begin()+i);
+			}
 
 		//Inertia
 		to_x *=0.8;
@@ -312,19 +353,22 @@ int main(int argc, char* args[]){
 
 		//Enemies spawn
 		if(startTicks - spawnTime> 3000){
-			enemies.push_back(Enemy(Vector2f(enemy1.getpos()), enemytex));
+			if(chasing) enemies.push_back(Enemy(Vector2f(enemy1.getpos()), enemytex));
+			else enemies.push_back(Enemy(Vector2f(enemy1.getpos()), enemytex, players[0].getpos()));
 			spawnTime = startTicks;
 		}
 
 		//Enemies chasing player
 		for(unsigned int i = 0; i < enemies.size(); i++){
-			float ex=0, ey=0;
-			Vector2f p = enemies[i].getdst(players[0].getpos());
+			float ex ,ey;
+			Vector2f p;
+			if(chasing) p = enemies[i].creatdst(players[0].getpos());
+			else p = enemies[i].getdst();
 			ex = p.x;
 			ey = p.y;
 			enemies[i].moving(ex, ey);
 		}
-
+		
 		
 		window.clear();
 
