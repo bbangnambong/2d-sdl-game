@@ -8,7 +8,10 @@
 class Enemy : public Entity{
 public:
 	Enemy(Vector2f p_pos, SDL_Texture* p_tex);
-	Vector2f getdst(Vector2f a_pos);
+	Enemy(Vector2f p_pos, SDL_Texture* p_tex, Vector2f p);
+	Vector2f getdst();
+	Vector2f creatdst(Vector2f a_pos);
 private:
 	float vel;
+	Vector2f dst;
 };
